@@ -9,6 +9,14 @@ children = []
 distance = {"AB": random.randint(0,100), "AC": random.randint(0,100), "AE": random.randint(0,100),
             "BD": random.randint(0,100), "CD": random.randint(0,100), "DF": random.randint(0,100),
             "EF": random.randint(0,100), "FG": random.randint(0,100)}
+#Initialize
+adj_matrix = [[infinf, distance["AB"], distance["AC"], infinf, distance["AE"], infinf, infinf],#A / #abcdef Index
+              [distance["AB"],  infinf, infinf, distance["BD"], infinf, infinf , infinf],#B
+              [distance["AC"], infinf, infinf, distance["CD"], infinf, infinf, infinf ],#C
+              [infinf,  infinf, distance["CD"], infinf, infinf, distance["DF"] , infinf],#D
+              [distance["AE"], infinf, infinf, infinf, infinf, distance["EF"], infinf],#E
+              [infinf, infinf, infinf, distance["DF"], distance["EF"],  infinf, distance["FG"]], #F
+              [infinf, infinf, infinf, infinf, infinf,  infinf, distance["FG"]]]#G
 
 ############################################################ Selection ###########################################################
 #Random String function
@@ -53,42 +61,26 @@ def get_road_value_by_letter(weight, selector):
 #fitness function    
 def fitness(selection):
     
-    selection_weights = []
-    selection_value = []
-    best_roads_value = []
-    string_to_array = []
-        
+    finest_dict = { "A": 0, "B": 1, "C": 2, "D": 3, "E": 4, "F": 5, "G": 6 } #Relation between matrix position with string
+    finest_weight = []
+    best_routes = []
     
-    #Convert string to list every two characters
-    for select in selection:
-        
+    for i in selection:
         weight = []
-        for j in range(0, len(selection[0]), 2): #Run from 0 to len of first index of selection and every 2 steps
-            string_to_array[:0:] = select #Convert string to list
-            selector = f"{string_to_array[j]}{string_to_array[j+1]}"
+        for j in range(len(i)-1): 
+            weight.append(adj_matrix[finest_dict[f"{i[j]}"]][finest_dict[f"{i[j+1]}"]])#Convert letter in a position
             
-            weights = get_road_value_by_letter(weight, selector)
-            selector = ""            
-            string_to_array = []
+        finest_weight.append(np.sum(weight, dtype=int))    
         
-        selection_weights.append(weights) #Save the new list
-        
-        
-    #Sum the selection weights in the array
-    for i in selection_weights:
-        selection_value.append(np.sum(i, dtype=int))      
+
+    pos1 = finest_weight.index(min(finest_weight))
+    best_routes.append(finest_weight[pos1])
+    finest_weight[pos1] = 1000000000
+
+    pos2 = finest_weight.index(min(finest_weight))
+    best_routes.append(finest_weight[pos2])
     
-      
-    pos1 = selection_value.index(min(selection_value)) #Get the position of the minimun value  
-    best_roads_value.append(selection_value[pos1])    
-    selection_value[pos1] = int(f"{infinf}{infinf}")*4 #Maximize the last position    
-    pos2 = selection_value.index(min(selection_value)) #Get the position of the second minimun value  
-    best_roads_value.append(selection_value[pos2])  
-    
-    if pos1 == pos2:# Force to send another position 
-        pos2 = 1 #Works when all the values in selection are inf
-    
-    return [selection[pos1], selection[pos2]], best_roads_value #Return the road with min values / BEST ROADS
+    return[selection[pos1], selection[pos2]], best_routes
     
 ############################################################ Cross combination ###################################################
 #Reproduction function 
@@ -159,7 +151,7 @@ def mutation(children):
 
 ############################################################# Main ################################################################
 gen = 0    
-for gen in range(1000):
+for gen in range(100):
     selection = parents_generation(population, parents, children)
     parents, values = (fitness(selection)) 
     children = (parents_reproduction(parents))
@@ -169,14 +161,7 @@ for gen in range(1000):
     print("GEN: ", gen,  " SELECTION: ", selection, " BEST ROADS: ", values) 
     
 
-#Initialize
-adj_matrix = [[infinf, distance["AB"], distance["AC"], infinf, distance["AE"], infinf],#A / #abcdef Index
-              [distance["AB"],  infinf, infinf, distance["BD"], infinf, infinf ],#B
-              [distance["AC"], infinf, infinf, distance["CD"], infinf, infinf ],#C
-              [infinf,  infinf, distance["CD"], infinf, infinf, distance["DF"] ],#D
-              [distance["AE"], infinf, infinf, infinf, infinf, distance["EF"]],#E
-              [infinf, infinf, infinf, distance["DF"], distance["EF"],  infinf], #F
-              [infinf, infinf, infinf, infinf, infinf,  infinf, distance["FG"]]]#G
+
 
 
 
@@ -187,3 +172,4 @@ adj_matrix = [[infinf, distance["AB"], distance["AC"], infinf, distance["AE"], i
 
 
  
+        
