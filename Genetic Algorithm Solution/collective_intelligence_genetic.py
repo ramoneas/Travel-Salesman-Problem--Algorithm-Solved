@@ -1,9 +1,16 @@
-import random, re
+import random
 import numpy as np
 
 infinf = f"1000" #infinity number
-
 population = 4
+
+GENERATIONS = 100
+BEST_FITNESS_QUANTITY = int(population/2) #50% of the population
+MUTATION_PERCENTAGE = 30
+ROAD_LETTERS = "BCDEFG"
+ROAD_ARRAY = list(ROAD_LETTERS)
+
+
 parents = []
 children = []
 distance = {"AB": random.randint(0,100), "AC": random.randint(0,100), "AE": random.randint(0,100),
@@ -21,9 +28,9 @@ adj_matrix = [[infinf, distance["AB"], distance["AC"], infinf, distance["AE"], i
 ############################################################ Selection ###########################################################
 #Random String function
 def parents_string_generation():  
-    road_letters = "BCDEFG" # define the specific string  
+     
     # define the condition for random.sample() method  
-    return "A"+"".join((random.sample(road_letters, len(road_letters))))+"A" #join is to convert the list to an string
+    return "A"+"".join((random.sample(ROAD_LETTERS, len(ROAD_LETTERS))))+"A" #join is to convert the list to an string
 
 #Parent Generation / RE-Combination function
 def parents_generation(population, parents = [], children = []): 
@@ -33,30 +40,8 @@ def parents_generation(population, parents = [], children = []):
             roads.append(parents_string_generation())
         return roads
     else:
-        return [parents[0] , parents[1] , children[0] , children[1]]
+        return parents + children
     
-#Convert the letters of the road array to the actual road value
-def get_road_value_by_letter(weight, selector):
-    if selector == "AB":
-        weight.append(selector.replace("AB", str(distance["AB"])))
-    elif selector == "AC":
-        weight.append(selector.replace("AC", str(distance["AC"])))
-    elif selector == "AE":   
-        weight.append(selector.replace("AE", str(distance["AE"])))
-    elif selector == "BD":
-        weight.append(selector.replace("BD", str(distance["BD"])))
-    elif selector == "CD":
-        weight.append(selector.replace("CD", str(distance["CD"])))
-    elif selector == "DF":
-        weight.append(selector.replace("DF", str(distance["DF"])))
-    elif selector == "EF":
-        weight.append(selector.replace("EF", str(distance["EF"])))
-    elif selector == "FG":
-        weight.append(selector.replace("FG", str(distance["FG"])))
-    else:
-        weight.append(re.sub('[A-Z]', infinf, selector))
-        
-    return weight
 
 #fitness function    
 def fitness(selection):
@@ -73,23 +58,22 @@ def fitness(selection):
         finest_weight.append(np.sum(weight, dtype=int))    
         
 
-    pos1 = finest_weight.index(min(finest_weight))
-    best_routes.append(finest_weight[pos1])
-    finest_weight[pos1] = 1000000000
-
-    pos2 = finest_weight.index(min(finest_weight))
-    best_routes.append(finest_weight[pos2])
+    best_routes = sorted(enumerate(finest_weight), key = lambda x:x[1])[:BEST_FITNESS_QUANTITY]
     
-    return[selection[pos1], selection[pos2]], best_routes
+    return [selection[i[0]] for i in best_routes], best_routes
     
 ############################################################ Cross combination ###################################################
 #Reproduction function 
 def parents_reproduction(parents):
-    parent1, parent2 = parents
         
-    child1 = list(f"{parent1[1:4]}{parent2[4:7]}") #Generate child without first and last character
-    child2 = list(f"{parent2[1:4]}{parent1[4:7]}")
-    children = [child1, child2]  
+    children = []    
+    index = 0    
+    for i in range(len(parents)):  
+        index += 1
+        if index == len(parents):
+            children.append(f"{parents[i][1:int(len(parents[i])/2)]}{parents[i-1][int(len(parents[i])/2):len(parents[i])-1]}")
+        else: #Generate child without first and last character
+           children.append(f"{parents[i][1:int(len(parents[i])/2)]}{parents[i+1][int(len(parents[i])/2):len(parents[i])-1]}")
     
     new_gen1, new_gen2 = cross_and_clean_children(children)
     
@@ -97,61 +81,57 @@ def parents_reproduction(parents):
                       
 #Clean duplicate items in children array function
 def cross_and_clean_children(child):    
-    index = 0
-    for i in child:   
+    
+    new_child = []
+    for i in child:           
         #Check the left items      
         unique_value = check_left_items(i)        
             
-        for j in range(3, len(i)):   
-            if unique_value and i[j].find(i[0])==0 or i[j].find(i[1])==0 or i[j].find(i[2])==0: #if find 0 is because is duplicated
-                #print("duplicate: ", i[j], j, i[j:], "unique: ", unique_value)                     
-                i[j] = unique_value.pop(index)
-    return child
+        for j in range(int(len(i)/2), len(i)):   
+            if unique_value and [x for x in range(int(len(i)/2)) if i[j].find(i[x])==0]: 
+                #if find 0 is because is duplicated                
+                i = i[:j] + unique_value.pop() + i[j+1:] #REWRITE VALUE IN i
+                
+        new_child.append(i)
+    
+    return new_child
+
 #Check items left in the new generation
 def check_left_items(i):
     unique_value = []
-    for e in range(3): # Save the lefting items in an array  
-        if not "B" in i and not "B" in unique_value:
-            unique_value.append("B")                
-        elif not "C" in i and not "C" in unique_value:
-            unique_value.append("C")                
-        elif not "D" in i and not "D" in unique_value:
-            unique_value.append("D")                
-        elif not "E" in i and not "E" in unique_value:
-            unique_value.append("E")                
-        elif not "F" in i and not "F" in unique_value:
-            unique_value.append("F")                
-        elif not "G" in i and not "G" in unique_value:
-            unique_value.append("G")
+    for e in range(len(ROAD_ARRAY)): # Save the lefting items in an array  
+        if not ROAD_ARRAY[e] in i and not ROAD_ARRAY[e] in unique_value:
+            unique_value.append(ROAD_ARRAY[e])           
+    
     return unique_value
 
 ############################################################# Mutation ############################################################  
 def mutation(children):
     
-    
-    mutation_porcentage = random.randint(0,100) 
-    child_selection = random.randint(0,1) #50% of children 
-    swap_right_index = random.randint(1,3)
-    swap_left_index = random.randint(4,6)
-    child = list(children[child_selection])
-    
+    for i in range(len(children)):
+        mutation_porcentage = random.randint(0,100) 
+        swap_right_index = random.randint(1,3)
+        swap_left_index = random.randint(4,6)
+        child = list(children[i])
         
-    letter_left = child[swap_left_index]
-    letter_right = child[swap_right_index]
-     
+            
+        letter_left = child[swap_left_index]
+        letter_right = child[swap_right_index]
+        
+        
+        if mutation_porcentage <= MUTATION_PERCENTAGE: # porcentage of mutation
+            child[swap_right_index] = letter_left
+            child[swap_left_index] = letter_right
+            children.pop(i)
+            children.insert(i,"".join(child))
     
-    if mutation_porcentage <= 30: #30% porcentage of mutation
-        child[swap_right_index] = letter_left
-        child[swap_left_index] = letter_right
-        children.pop(child_selection)
-        children.insert(child_selection,"".join(child))
         
     return children
 
 
 ############################################################# Main ################################################################
 gen = 0    
-for gen in range(100):
+for gen in range(GENERATIONS):
     selection = parents_generation(population, parents, children)
     parents, values = (fitness(selection)) 
     children = (parents_reproduction(parents))
