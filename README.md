@@ -1,5 +1,5 @@
 <img src="https://co-enzyme.fr/wp-content/uploads/2020/06/tsp.jpg">
-Finding an optimized solution of the Travel's Salesman Problem with Genetic Algorithms and Ant Colony Algorithms
+Exploring Optimized Solutions for the Traveling Salesman Problem using Genetic and Swarm Algorithms.
 
 The traveling salesman problem (TSP) is an algorithmic problem tasked with finding the shortest route between a set of points and locations that must be visited. 
 In the problem statement, the points are the cities a salesperson might visit.
